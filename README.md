@@ -87,6 +87,16 @@ ko'rinadi — `/yuklab-olish/docx`, `/yuklab-olish/pdf`, `/yuklab-olish/xlsx`,
 `/yuklab-olish/json`. Manzil bir lahzaga o'zgaradi va shu zahoti qaytariladi,
 shuning uchun ko'zga tashlanmaydi.
 
+## Saqlangan savollar
+
+Har bir savolning o'ng tomonida yulduzcha bor — bosilsa savol saqlanadi.
+Saqlanganlar brauzerning o'zida (`localStorage`) qoladi, ya'ni server ham,
+ro'yxatdan o'tish ham kerak emas. Boshqa qurilmaga o'tmaydi.
+
+Kamida bitta savol saqlangach, qidiruv yonida yulduzcha tugmasi paydo bo'ladi —
+u faqat saqlanganlarni ko'rsatadi. Saqlanganlar ichidan qidirish ham mumkin,
+yuklab olish ham faqat o'shalarni oladi.
+
 ## Yuklab olish
 
 Qidiruv yonidagi dumaloq tugma to'rt formatni beradi:

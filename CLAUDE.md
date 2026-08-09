@@ -135,6 +135,21 @@ Everything below is a deliberate choice with a reason; changing one without the 
   corpus, so no chip can produce a second empty state. Do not derive them by token frequency; that returns
   `uchun`, `qanday`, `assalomu`.
 
+## Saved questions (izbranni)
+
+A star button sits at the right end of every entry's kicker row. State lives in `localStorage['ama-saved']` as
+an array of **slugs**, not indices — the archive grows by append and gets reordered, and a slug is derived from
+the question text, so a bookmark survives both. The tradeoff: editing a question's text changes its slug and
+silently drops that bookmark. There is no other stable identifier in the data.
+
+- `#fav-btn` (the star in the top bar) is `hidden` until at least one entry is saved, so the top bar is not
+  crowded for a first-time visitor. Un-saving the last entry hides it again *and* turns the filter off.
+- The saved filter and the search query are **ANDed**, so you can search inside your saved set. `render()`
+  computes `matched` (query) and `inFav` separately and intersects them; `pool` is the denominator shown in
+  the status line, so filtering inside favourites reads "5 tadan 2 tasi topildi".
+- Export follows the visible set, so "download only my saved questions" works with no extra code.
+- The star is `data-nomark` so search highlighting never walks into it, and `display: none` in print.
+
 ## Analytics
 
 Vercel Web Analytics is loaded from a guarded inline snippet in `<head>`. Two things make it fit this project:

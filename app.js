@@ -14,6 +14,11 @@
   var SQUISH_MIN = 6;          // probel-siz qidiruv shundan qisqa so'rovda ishlamaydi
   var STATUS_DELAY = 350;      // ekran o'qigichga e'lon qilish kechikishi
 
+  var STAR_SVG =
+    '<svg width="17" height="17" viewBox="0 0 20 20" aria-hidden="true" focusable="false">' +
+    '<path d="M10 2.6l2.32 4.7 5.18.75-3.75 3.66.89 5.16L10 14.43l-4.64 2.44.89-5.16L2.5 8.05l5.18-.75z" ' +
+    'stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/></svg>';
+
   var CHIPS = ['Germaniya', 'USMLE', 'oftalmolog', 'aksiya', 'home schooling', 'farzand', 'sport'];
 
   /* ------------------------------------------------------- normalizatsiya --
@@ -255,6 +260,72 @@
     return s.length > n ? s.slice(0, n).replace(/\s+\S*$/, '') + '…' : s;
   }
 
+  /* ------------------------------------------------------------ saqlanganlar --
+
+     "Izbranni" localStorage'da yashaydi: {slug: true}. Massiv indeksi emas,
+     aynan slug saqlanadi — slug savol matnidan olinadi, shuning uchun yangi
+     savollar qo'shilib tartib o'zgarsa ham belgilar joyida qoladi.
+
+     (Savol matni tahrirlansa uning slugi ham o'zgaradi va o'sha belgi
+     yo'qoladi — bu qabul qilingan cheklov, boshqa turg'un identifikator yo'q.)
+  -------------------------------------------------------------------------- */
+
+  var SAVED_KEY = 'ama-saved';
+  var saved = {};
+  var favOnly = false;
+
+  function loadSaved() {
+    try {
+      var raw = localStorage.getItem(SAVED_KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      if (Object.prototype.toString.call(arr) === '[object Array]') {
+        for (var i = 0; i < arr.length; i++) {
+          if (typeof arr[i] === 'string') saved[arr[i]] = true;
+        }
+      }
+    } catch (e) {}
+  }
+
+  function persistSaved() {
+    try {
+      var list = [];
+      for (var k in saved) if (saved.hasOwnProperty(k)) list.push(k);
+      localStorage.setItem(SAVED_KEY, JSON.stringify(list));
+    } catch (e) {}
+  }
+
+  function savedCount() {
+    var n = 0;
+    for (var k in saved) if (saved.hasOwnProperty(k)) n++;
+    return n;
+  }
+
+  function toggleSaved(e) {
+    var slug = e.rec.slug;
+    if (saved[slug]) delete saved[slug]; else saved[slug] = true;
+    persistSaved();
+    paintStar(e);
+    if (!savedCount()) favOnly = false;   // oxirgisi olib tashlandi
+    syncFavButton();
+    render(currentQuery);
+  }
+
+  function paintStar(e) {
+    var on = !!saved[e.rec.slug];
+    e.star.setAttribute('aria-pressed', on ? 'true' : 'false');
+    e.star.setAttribute('aria-label', on ? 'Saqlanganlardan olib tashlash' : 'Saqlash');
+  }
+
+  function syncFavButton() {
+    if (!favBtn) return;
+    var n = savedCount();
+    favBtn.hidden = n === 0;
+    favBtn.setAttribute('aria-pressed', favOnly ? 'true' : 'false');
+    favBtn.setAttribute('aria-label',
+      (favOnly ? 'Hamma savollarni ko\u2019rsatish' : 'Saqlanganlarni ko\u2019rsatish') + ' (' + n + ' ta)');
+    syncStuckHeight();
+  }
+
   /* ---------------------------------------------------------------- data -- */
 
   var records = [];
@@ -443,6 +514,7 @@
 
     var ordText = pad(index + 1, String(total).length < 2 ? 2 : String(total).length);
 
+    var kickerRow = el('div', 'kicker-row');
     var kicker = el('h2', 'kicker');
     kicker.setAttribute('aria-label', 'Savol ' + ordText + ': ' + truncate(rec.lead, 70));
     var ord = el('span', 'ord', ordText);
@@ -465,7 +537,15 @@
     var savolLabel = el('span', null, 'SAVOL');
     savolLabel.setAttribute('data-nomark', '');
     kicker.appendChild(savolLabel);
-    art.appendChild(kicker);
+
+    var star = el('button', 'star');
+    star.type = 'button';
+    star.setAttribute('data-nomark', '');
+    star.insertAdjacentHTML('beforeend', STAR_SVG);
+
+    kickerRow.appendChild(kicker);
+    kickerRow.appendChild(star);
+    art.appendChild(kickerRow);
 
     var qBody = hashtag
       ? rec.question.split('\n').slice(1).join('\n').replace(/^\n+/, '')
@@ -504,7 +584,7 @@
 
     return {
       li: li, article: art, qProse: qProse, qBlock: qBlock,
-      answer: answer, clampBtn: clampBtn, btnText: btnText, rec: rec,
+      answer: answer, clampBtn: clampBtn, btnText: btnText, star: star, rec: rec,
       clampLimit: 0, isClamped: false
     };
   }
@@ -577,7 +657,7 @@
   var $ = function (id) { return document.getElementById(id); };
 
   var input, statusVis, statusLive, clearBtn, listEl, emptyEl, emptyBody,
-      railList, railHead, kbdHint, countInline, searchwrap;
+      railList, railHead, kbdHint, countInline, searchwrap, favBtn;
 
   var statusTimer = null;
   var lastTier = 1;
@@ -595,10 +675,19 @@
 
   function statusRest(total) {
     var f = document.createDocumentFragment();
-    f.appendChild(document.createTextNode('Jami '));
+    var lead = favOnly ? 'Saqlangan ' : 'Jami ';
+    f.appendChild(document.createTextNode(lead));
     f.appendChild(el('span', 'n', String(total)));
     f.appendChild(document.createTextNode(' ta savol'));
-    return { node: f, text: 'Jami ' + total + ' ta savol' };
+    if (favOnly) f.appendChild(allButtonNode());
+    return { node: f, text: lead + total + ' ta savol' };
+  }
+
+  function allButtonNode() {
+    var b = el('button', 'linkbtn', 'Hammasi');
+    b.type = 'button';
+    b.addEventListener('click', function () { setFavOnly(false); });
+    return b;
   }
 
   function clearButtonNode() {
@@ -632,6 +721,7 @@
     f.appendChild(el('span', 'dot', '·'));
     f.appendChild(echoNode(query));
     f.appendChild(clearButtonNode());
+    if (favOnly) f.appendChild(allButtonNode());
     return { node: f, text: text };
   }
 
@@ -650,45 +740,44 @@
     var trimmed = query.trim();
     var res = runSearch(trimmed);
     var total = entries.length;
+    var hasQuery = res.tokens.length > 0 || res.tier !== 0;
     var i, e;
 
     clearBtn.hidden = !query.length;
     if (kbdHint) kbdHint.hidden = query.length > 0;
 
-    // Bo'sh yoki faqat tinish belgisidan iborat so'rov — to'liq ro'yxat.
-    if (!res.tokens.length && res.tier === 0) {
-      for (i = 0; i < entries.length; i++) {
-        e = entries[i];
-        clearMarks(e.qProse); clearMarks(e.answer);
-        e.li.hidden = false;
-        if (e.autoExpanded && !e.userExpanded) { collapse(e); e.autoExpanded = false; }
-      }
-      emptyEl.hidden = true;
-      listEl.hidden = false;
-      setStatus(statusRest(total));
-      countInline.classList.remove('is-on');
-      updateRail(null);
-      if (trimmed !== '') { /* faqat emoji kabi so'rov — hech narsa filtrlanmadi */ }
-      restoreStagger();
-      return;
+    // So'rov bo'yicha moslik. Bo'sh (yoki faqat tinish belgili) so'rov —
+    // hammasi mos deb hisoblanadi.
+    var matched = {};
+    if (hasQuery) {
+      for (i = 0; i < res.hits.length; i++) matched[res.hits[i]] = true;
+    } else {
+      for (i = 0; i < entries.length; i++) matched[i] = true;
     }
 
+    // Saqlanganlar filtri so'rov bilan BIRGA ishlaydi (ikkalasi ham bajarilishi
+    // shart), shuning uchun saqlanganlar ichidan ham qidirish mumkin.
+    var pool = 0;
     var hitSet = {};
-    for (i = 0; i < res.hits.length; i++) hitSet[res.hits[i]] = true;
+    var found = 0;
+    for (i = 0; i < entries.length; i++) {
+      var inFav = !favOnly || !!saved[entries[i].rec.slug];
+      if (inFav) pool++;
+      if (matched[i] && inFav) { hitSet[i] = true; found++; }
+    }
 
     for (i = 0; i < entries.length; i++) {
       e = entries[i];
       clearMarks(e.qProse);
       clearMarks(e.answer);
-      var on = !!hitSet[i];
-      if (!on) {
+      if (!hitSet[i]) {
         if (e.li.contains(document.activeElement)) input.focus();
         e.li.hidden = true;
         if (e.autoExpanded && !e.userExpanded) { collapse(e, true); e.autoExpanded = false; }
         continue;
       }
       e.li.hidden = false;
-      if (res.tier !== 3 && res.tokens.length) {
+      if (hasQuery && res.tier !== 3 && res.tokens.length) {
         var used = applyMarks(e.qProse, res.tokens, res.tier, MAX_MARKS);
         applyMarks(e.answer, res.tokens, res.tier, MAX_MARKS - used);
         // Belgi qisqartirilgan qismda qolib ketmasin.
@@ -697,29 +786,37 @@
           expand(e, true);
           e.autoExpanded = true;
         }
+      } else if (e.autoExpanded && !e.userExpanded) {
+        collapse(e); e.autoExpanded = false;
       }
     }
 
-    var found = res.hits.length;
     listEl.hidden = found === 0;
     emptyEl.hidden = found !== 0;
 
     if (found === 0) {
       emptyBody.textContent = '';
-      emptyBody.appendChild(document.createTextNode('«' + trimmed + '»'));
-      emptyBody.appendChild(document.createTextNode(
-        " bo'yicha natija yo'q. Boshqacha yozib ko'ring yoki so'rovni qisqartiring."));
+      if (hasQuery) {
+        emptyBody.appendChild(document.createTextNode('«' + trimmed + '»'));
+        emptyBody.appendChild(document.createTextNode(favOnly
+          ? " bo'yicha saqlanganlar ichida natija yo'q."
+          : " bo'yicha natija yo'q. Boshqacha yozib ko'ring yoki so'rovni qisqartiring."));
+      } else {
+        emptyBody.appendChild(document.createTextNode(
+          "Hali hech narsa saqlanmagan. Savol yonidagi yulduzchani bosing."));
+      }
       setStatus(statusZero());
+    } else if (hasQuery) {
+      setStatus(statusFiltered(pool, found, trimmed, res.tier >= 2));
     } else {
-      // 2- va 3-pog'ona taxminiy: foydalanuvchi natija nega "boshqacha"
-      // ekanini bilib tursin.
-      setStatus(statusFiltered(total, found, trimmed, res.tier >= 2));
+      setStatus(statusRest(found));
     }
 
-    countInline.textContent = found + '/' + total;
-    countInline.classList.add('is-on');
+    countInline.textContent = found + '/' + pool;
+    countInline.classList.toggle('is-on', hasQuery || favOnly);
     lastTier = res.tier;
-    updateRail(hitSet, found);
+    updateRail(hasQuery || favOnly ? hitSet : null, found);
+    if (!hasQuery) restoreStagger();
   }
 
   var staggerTimer = null;
@@ -748,7 +845,9 @@
       link.hidden = hitSet ? !hitSet[i] : false;
     }
     railHead.textContent = '';
-    railHead.appendChild(document.createTextNode(hitSet ? 'TOPILDI ' : 'SAVOLLAR '));
+    var label = 'SAVOLLAR ';
+    if (hitSet) label = (favOnly && currentQuery.trim() === '') ? 'SAQLANGAN ' : 'TOPILDI ';
+    railHead.appendChild(document.createTextNode(label));
     railHead.appendChild(el('span', 'n', '(' + (hitSet ? found : entries.length) + ' ta)'));
   }
 
@@ -1282,7 +1381,8 @@
 
   function init(raw) {
     records = buildRecords(raw);
-    if (!records.length) { showBootError(); return; }
+    if (!records.length) { showBootError(new Error('ro’yxat bo’sh')); return; }
+    loadSaved();
 
     var total = records.length;
     var i;
@@ -1322,6 +1422,8 @@
 
     for (i = 0; i < entries.length; i++) {
       (function (e) {
+        paintStar(e);
+        e.star.addEventListener('click', function () { toggleSaved(e); });
         e.clampBtn.addEventListener('click', function () {
           var open = e.clampBtn.getAttribute('aria-expanded') === 'true';
           if (open) { collapse(e); e.userExpanded = false; e.autoExpanded = false; }
@@ -1341,6 +1443,7 @@
       resizeTimer = setTimeout(function () { measureAll(); syncStuckHeight(); }, 150);
     });
 
+    syncFavButton();
     render('');
     syncStuckHeight();
     setupObservers();
@@ -1359,7 +1462,10 @@
       normMap: normMap,
       search: function (q) { return runSearch(q).hits; },
       records: records,
-      entries: entries
+      entries: entries,
+      saved: function () { return saved; },
+      favOnly: function () { return favOnly; },
+      setFavOnly: setFavOnly
     };
 
     if (window.console && console.assert) {
@@ -1396,6 +1502,16 @@
     kbdHint = $('kbdhint');
     countInline = $('count-inline');
     searchwrap = $('searchwrap');
+    favBtn = $('fav-btn');
+
+    /* Tor ekranda uzun placeholder kesilib qoladi — qisqasini qo'yamiz. */
+    var narrow = window.matchMedia('(max-width: 479px)');
+    function syncPlaceholder() {
+      input.placeholder = narrow.matches ? 'Qidirish…' : "Savol yoki kalit so'z yozing…";
+    }
+    syncPlaceholder();
+    if (narrow.addEventListener) narrow.addEventListener('change', syncPlaceholder);
+    else if (narrow.addListener) narrow.addListener(syncPlaceholder);
 
     $('searchform').addEventListener('submit', function (ev) { ev.preventDefault(); });
     input.addEventListener('input', function () { render(input.value); });
@@ -1425,7 +1541,16 @@
       input.focus();
     });
 
+    if (favBtn) favBtn.addEventListener('click', function () { setFavOnly(!favOnly); });
+
     setupTheme();
+  }
+
+  function setFavOnly(on) {
+    favOnly = !!on && savedCount() > 0;
+    syncFavButton();
+    render(currentQuery);
+    if (favBtn && !favBtn.hidden) favBtn.focus();
   }
 
   function start() {

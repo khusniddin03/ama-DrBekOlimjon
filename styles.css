@@ -218,6 +218,14 @@ a { color: var(--accent); }
 
 .topbar { display: flex; align-items: center; gap: 10px; }
 
+/* Tor ekranda uchta tugma + qidiruv sig'ishi uchun hammasi biroz kichrayadi.
+   Maydonning shrifti 16px'ligicha qoladi — iOS aks holda zoom qiladi. */
+@media (max-width: 479px) {
+  .topbar { gap: 8px; }
+  .iconbtn { width: 42px; height: 42px; }
+  .field-row { height: 42px; padding-left: 12px; }
+}
+
 .field { position: relative; display: block; flex: 1 1 auto; min-width: 0; }
 
 /* Telegram qidiruv maydoni: to'ldirilgan, dumaloq, chegarasiz;
@@ -396,12 +404,36 @@ a { color: var(--accent); }
 }
 .qa.is-targeted::before { opacity: 1; }
 
-.kicker {
-  display: flex; align-items: center; gap: 7px;
-  font-size: 0.6875rem; font-weight: 600; line-height: 1;
-  letter-spacing: 0.08em; color: var(--ink-4);
+.kicker-row {
+  display: flex; align-items: center; gap: 12px;
   margin-bottom: 10px;
 }
+
+.kicker {
+  display: flex; align-items: center; gap: 7px;
+  flex: 1 1 auto; min-width: 0;
+  font-size: 0.6875rem; font-weight: 600; line-height: 1;
+  letter-spacing: 0.08em; color: var(--ink-4);
+}
+
+/* Saqlash yulduzchasi — bosilmaganda faqat chizma, bosilganda to'ldirilgan. */
+.star {
+  flex: none;
+  width: 34px; height: 34px;
+  margin: -7px -8px -7px 0;
+  display: grid; place-items: center;
+  color: var(--ink-4);
+  border-radius: 999px;
+  transition: color var(--dur-1) linear, background-color var(--dur-1) linear;
+}
+.star:hover { color: var(--accent); background: var(--hover); }
+.star[aria-pressed="true"] { color: var(--accent); }
+.star[aria-pressed="true"] path { fill: currentColor; }
+.star:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; border-radius: 999px; }
+
+/* Yuqoridagi filtr tugmasi yoqilganda to'ldirilgan yulduzcha bo'ladi. */
+#fav-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+#fav-btn[aria-pressed="true"] path { fill: currentColor; }
 .kicker .hash { color: var(--accent); letter-spacing: 0.06em; }
 .kicker .ord {
   font-weight: 600; color: var(--ink-4);
@@ -616,7 +648,8 @@ mark {
 
   html, body { background: #FFFFFF !important; }
 
-  .skip, .searchwrap, .rail, .totop, #empty, #boot-error, .footer, .clampbtn { display: none !important; }
+  .skip, .searchwrap, .rail, .totop, #empty, #boot-error, .footer, .clampbtn,
+  .star { display: none !important; }
 
   /* Sarlavha faqat qog'ozda ko'rinadi. */
   .sr-only#top {
