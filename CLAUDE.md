@@ -148,6 +148,25 @@ It only records once Web Analytics is enabled for the project in the Vercel dash
 then. Numbers appear in the dashboard, not on the page — that was a deliberate choice over an on-page counter,
 which would have needed a serverless function plus a KV store.
 
+**Download counting is a trial and is meant to be easy to rip out.** Vercel's Hobby plan does not include
+custom events (`va('event', …)` is Pro-only), so `trackDownload()` in `app.js` records each export as a
+*virtual page view* instead: it pushes `/yuklab-olish/<format>` and restores the real URL in the same task.
+
+Why that is safe — verified by reading the shipped `/_vercel/insights/script.js`:
+
+- The script wraps `history.pushState` and calls its recorder **synchronously** inside the wrapper.
+- The recorder's `v()` captures `location.href` on its first line, *before* any `await`, so the beacon carries
+  the virtual path even though we restore the URL immediately afterwards.
+- `history.replaceState` is **not** wrapped, so restoring produces no second page view and does not inflate
+  the count for `/`.
+- The script dedupes against the last recorded pathname, so hammering the same format twice in a row counts
+  once — which is the desired behaviour for a double-click, and why a repeat only registers after a different
+  format has been downloaded in between.
+
+Because the URL is restored within the same task, a reload can never land on `/yuklab-olish/...` (which would
+404 on a static deploy). `trackDownload` is a no-op unless `window.vai` is set, so localhost stays clean.
+To remove the experiment: delete `trackDownload()` and its single call site in `runExport()`.
+
 ## Export
 
 The download menu (the circular button between the search field and the theme toggle) produces four formats

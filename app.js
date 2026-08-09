@@ -1144,10 +1144,38 @@
     return 'Savol-javob' + (q ? ' — «' + q + '»' : '') + ' (' + count + ' ta)';
   }
 
+  /* ---- yuklab olishlarni sanash (SINOV — olib tashlash oson) --------------
+
+     Vercel'ning bepul tarifida custom event yo'q, shuning uchun yuklab olish
+     "soxta sahifa ko'rinishi" sifatida yoziladi: manzil bir lahzaga
+     /yuklab-olish/<format> ga o'zgaradi va shu zahoti qaytariladi.
+
+     Nega bu xavfsiz: Vercel skripti history.pushState'ni o'rab olgan va
+     ichida location.href ni SINXRON o'qiydi (await'dan oldin). Ya'ni yozuv
+     virtual manzil bilan ketadi, biz esa manzilni o'sha vazifaning o'zida
+     qaytaramiz — foydalanuvchi hech narsani sezmaydi va sahifani yangilasa
+     ham 404 ga tushmaydi.
+
+     Bir xil formatni ketma-ket bosish bir marta sanaladi (skript oxirgi
+     manzilni eslab qoladi) — bu tasodifiy ikki marta bosishdan himoya.
+
+     O'CHIRISH UCHUN: shu funksiyani va quyidagi trackDownload(fmt) qatorini
+     olib tashlang, boshqa hech narsa tegmaydi.
+  ------------------------------------------------------------------------- */
+  function trackDownload(fmt) {
+    if (!window.vai) return;              // analitika skripti yuklanmagan
+    try {
+      var back = location.pathname + location.search + location.hash;
+      history.pushState(null, '', '/yuklab-olish/' + fmt);
+      history.replaceState(null, '', back);
+    } catch (e) {}
+  }
+
   function runExport(fmt) {
     var rows = exportRows();
     if (!rows.length) return;
     var title = exportTitle(rows.length);
+    trackDownload(fmt);
 
     if (fmt === 'json') {
       saveBlob(new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' }),
@@ -1207,7 +1235,8 @@
       else if (ev.key === 'Tab') close(false);
     });
 
-    window.AMA_EXPORT = { rows: exportRows, docx: docxBlob, xlsx: xlsxBlob, zip: zip, name: exportName };
+    window.AMA_EXPORT = { rows: exportRows, docx: docxBlob, xlsx: xlsxBlob, zip: zip,
+                          name: exportName, track: trackDownload };
   }
 
   /* ---------------------------------------------------------------- boot -- */

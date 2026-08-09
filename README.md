@@ -82,6 +82,11 @@ Skript sayt domenining o'zidan (`/_vercel/...`) yuklanadi, ya'ni begona hostga
 so'rov ketmaydi. Lokal ishlaganda (`localhost` yoki fayl orqali) umuman
 yuklanmaydi.
 
+Yuklab olishlar ham sanaladi: har bir eksport panelda alohida sahifa bo'lib
+ko'rinadi — `/yuklab-olish/docx`, `/yuklab-olish/pdf`, `/yuklab-olish/xlsx`,
+`/yuklab-olish/json`. Manzil bir lahzaga o'zgaradi va shu zahoti qaytariladi,
+shuning uchun ko'zga tashlanmaydi.
+
 ## Yuklab olish
 
 Qidiruv yonidagi dumaloq tugma to'rt formatni beradi:
