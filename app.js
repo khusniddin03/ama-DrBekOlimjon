@@ -985,7 +985,8 @@
   function xmlText(s) {
     return String(s).replace(CTRL, '')
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+      .replace(/"/g, '&quot;');   /* apostrof matn ichida qochirilmaydi:
+         u XMLda oddiy belgi, atributlar esa qo'sh tirnoqda yoziladi. */
   }
 
   var RELS = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +

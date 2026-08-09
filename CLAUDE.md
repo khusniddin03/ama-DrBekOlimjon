@@ -135,6 +135,28 @@ Everything below is a deliberate choice with a reason; changing one without the 
   corpus, so no chip can produce a second empty state. Do not derive them by token frequency; that returns
   `uchun`, `qanday`, `assalomu`.
 
+## Export
+
+The download menu (the circular button between the search field and the theme toggle) produces four formats
+with **no library and no build step**:
+
+- **`.docx` and `.xlsx` are written by hand.** Both formats are just a ZIP containing XML parts, so `app.js`
+  carries a ~70-line store-only (uncompressed) ZIP writer plus a CRC-32 table. The docx ships three parts
+  (`[Content_Types].xml`, `_rels/.rels`, `word/document.xml`); the xlsx ships six, including a `styles.xml`
+  whose `s="1"` cell format supplies `wrapText` + top alignment — without it the long answers render as one
+  unreadable line. Cells use `inlineStr`, so there is no `sharedStrings.xml` to keep in sync.
+- **PDF goes through `window.print()`** and the `@media print` block, which is why that menu item is labelled
+  "chop etish". A hand-rolled PDF would be limited to the standard-14 fonts, whose WinAnsi encoding cannot
+  represent U+02BB / U+02BC (the `oʻ` and `sunʼiy` letters) or the emoji — it would silently corrupt the
+  corpus. Do not "upgrade" this to a hand-built PDF writer.
+- Export follows the **current filter**: a search narrows what lands in the file, and the query goes into the
+  filename and the document title.
+- XML escaping covers `& < > "` and strips XML-illegal control characters. Apostrophes are deliberately *not*
+  escaped — they are ordinary characters in text nodes, and every attribute here is double-quoted.
+- Regression-test by generating the blobs via `window.AMA_EXPORT`, base64-ing them into the DOM, and opening
+  them in Python with `zipfile` + `ElementTree` — round-trip every question and answer and assert byte equality
+  with the JSON. `textutil -convert txt out.docx` is a good extra check: it is macOS's own Word parser.
+
 ## Revisit trigger
 
 Every answer is rendered open. That stays right while the whole archive is a single sitting's read. Once it is

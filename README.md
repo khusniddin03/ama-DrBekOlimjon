@@ -65,4 +65,21 @@ ichidagi `10` ni topmaydi.
 
 Tugmalar: `/` yoki `Cmd/Ctrl+K` — qidiruv, `Esc` — tozalash, `↓ ↑ Home End` —
 savollar orasida yurish.
+
+## Yuklab olish
+
+Qidiruv yonidagi dumaloq tugma to'rt formatni beradi:
+
+| Format | Nima bo'ladi |
+|---|---|
+| **Word** | `.docx` fayl yuklanadi — Word, Pages, Google Docs da ochiladi |
+| **PDF** | brauzerning chop etish oynasi ochiladi, u yerda "PDF sifatida saqlash" |
+| **Excel** | `.xlsx` fayl — uch ustun: `#`, `Savol`, `Javob` |
+| **JSON** | manba formatining o'zi |
+
+Qidiruv faol bo'lsa **faqat topilgan savollar** yuklanadi va so'rov fayl nomiga
+qo'shiladi: `savol-javob-germaniya.docx`.
+
+Hech qanday kutubxona ishlatilmaydi — `.docx` va `.xlsx` brauzerning o'zida
+yasaladi.
 # ama-DrBekOlimjon
