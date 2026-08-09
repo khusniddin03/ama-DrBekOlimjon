@@ -66,6 +66,22 @@ ichidagi `10` ni topmaydi.
 Tugmalar: `/` yoki `Cmd/Ctrl+K` — qidiruv, `Esc` — tozalash, `↓ ↑ Home End` —
 savollar orasida yurish.
 
+## Tashrifchilar statistikasi
+
+Vercel Web Analytics ulangan. Ishga tushishi uchun Vercel panelida bir marta
+yoqish kerak:
+
+1. Vercel → loyiha → **Analytics** bo'limi
+2. **Enable** tugmasi
+3. Saytni bir marta qayta joylang (yoki keyingi push'ni kuting)
+
+Shundan keyin panelda tashrifchilar soni, sahifa ko'rishlar, davlatlar va
+qurilmalar ko'rinadi. Raqam saytning o'zida ko'rsatilmaydi.
+
+Skript sayt domenining o'zidan (`/_vercel/...`) yuklanadi, ya'ni begona hostga
+so'rov ketmaydi. Lokal ishlaganda (`localhost` yoki fayl orqali) umuman
+yuklanmaydi.
+
 ## Yuklab olish
 
 Qidiruv yonidagi dumaloq tugma to'rt formatni beradi:

@@ -135,6 +135,19 @@ Everything below is a deliberate choice with a reason; changing one without the 
   corpus, so no chip can produce a second empty state. Do not derive them by token frequency; that returns
   `uchun`, `qanday`, `assalomu`.
 
+## Analytics
+
+Vercel Web Analytics is loaded from a guarded inline snippet in `<head>`. Two things make it fit this project:
+
+- The script (`/_vercel/insights/script.js`) and the beacon it sends (`/_vercel/insights/view`) are **same-origin
+  paths** intercepted by Vercel's edge, so the "no third-party host is ever contacted" property still holds.
+- The snippet skips `localhost`, `127.0.0.1` and `file://`, so local development stays request-free and the
+  console stays clean (the path 404s anywhere that is not Vercel).
+
+It only records once Web Analytics is enabled for the project in the Vercel dashboard; the script 404s until
+then. Numbers appear in the dashboard, not on the page — that was a deliberate choice over an on-page counter,
+which would have needed a serverless function plus a KV store.
+
 ## Export
 
 The download menu (the circular button between the search field and the theme toggle) produces four formats

@@ -12,6 +12,19 @@
     var t = localStorage.getItem('ama-theme');
     if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
   } catch (e) {}
+
+  /* Vercel Web Analytics — tashrifchilar hisobi.
+     Skript ham, yuboriladigan ma'lumot ham /_vercel/... yo'li orqali, ya'ni
+     saytning o'z domenida ketadi: begona hostga bitta ham so'rov bormaydi.
+     Lokal ishlaganda (localhost yoki file://) umuman yuklanmaydi. */
+  if (location.protocol === 'https:' || location.protocol === 'http:') {
+    if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+      var s = document.createElement('script');
+      s.defer = true;
+      s.src = '/_vercel/insights/script.js';
+      document.head.appendChild(s);
+    }
+  }
 </script>
 </head>
 <body>
